@@ -52,11 +52,11 @@
 const FT = 1; // 1 unit = 1 foot
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xbfe0ef);
-scene.fog = new THREE.Fog(0xbfe0ef, 130, 320);
+scene.fog = new THREE.Fog(0xbfe0ef, 140, 340);
 
 const camera = new THREE.PerspectiveCamera(46, innerWidth/innerHeight, 0.5, 1000);
-const HOME_POS = new THREE.Vector3(34, 78, 96), HOME_TGT = new THREE.Vector3(0, 5, 6);
-const SITE_POS = new THREE.Vector3(118, 70, 52), SITE_TGT = new THREE.Vector3(2, 0, 44);
+const HOME_POS = new THREE.Vector3(36, 70, 92), HOME_TGT = new THREE.Vector3(0, 6, 4);
+const SITE_POS = new THREE.Vector3(92, 62, 8), SITE_TGT = new THREE.Vector3(4, -1, 44);
 camera.position.copy(HOME_POS);
 
 const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
@@ -64,26 +64,38 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.08;
+controls.dampingFactor = 0.075;
+controls.rotateSpeed = 0.85;
+controls.zoomSpeed = 0.85;
+controls.panSpeed = 0.7;
+controls.screenSpacePanning = false;
 controls.target.copy(HOME_TGT);
-controls.maxPolarAngle = Math.PI*0.49;
-controls.minDistance = 25;
-controls.maxDistance = 240;
+controls.maxPolarAngle = Math.PI*0.485;
+controls.minDistance = 24;
+controls.maxDistance = 230;
 
 // ---------- lights ----------
-const hemi = new THREE.HemisphereLight(0xdff1ff, 0x6b7b5a, 0.85);
+const hemi = new THREE.HemisphereLight(0xdff1ff, 0x73855e, 0.75);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff3df, 1.05);
-sun.position.set(60, 90, 40);
+const sun = new THREE.DirectionalLight(0xfff1d8, 1.25);
+sun.position.set(58, 96, 36);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048,2048);
 sun.shadow.camera.near = 1; sun.shadow.camera.far = 320;
-sun.shadow.camera.left=-90; sun.shadow.camera.right=90; sun.shadow.camera.top=90; sun.shadow.camera.bottom=-90;
+sun.shadow.camera.left=-95; sun.shadow.camera.right=95; sun.shadow.camera.top=95; sun.shadow.camera.bottom=-95;
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.4; sun.shadow.radius = 3;
 scene.add(sun);
-scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+// soft fill from the lake side to lift shadowed faces
+const fill = new THREE.DirectionalLight(0xbfe0ef, 0.28);
+fill.position.set(-30, 24, 90);
+scene.add(fill);
+scene.add(new THREE.AmbientLight(0xffffff, 0.20));
 
 // ---------- groups ----------
 const G = {
@@ -119,13 +131,16 @@ function shell(rect,baseY,h,color,group){
   box(t,h,d,x0,baseY+h/2,cz,wm,group);
   box(t,h,d,x1,baseY+h/2,cz,wm,group);
 }
-function label(text,x,y,z,group,scale=7,bg='rgba(20,50,63,.9)',fg='#fff'){
-  const cv=document.createElement('canvas');const s=4;cv.width=512;cv.height=128;
+function label(text,x,y,z,group,scale=7,bg='rgba(20,50,63,.92)',fg='#fff'){
+  const cv=document.createElement('canvas');cv.width=1024;cv.height=256;
   const ctx=cv.getContext('2d');
-  ctx.fillStyle=bg;roundRect(ctx,4,30,504,68,20);ctx.fill();
-  ctx.fillStyle=fg;ctx.font='bold 44px -apple-system,Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(text,256,66);
-  const tex=new THREE.CanvasTexture(cv);tex.anisotropy=4;
+  // pill background with a thin light border for contrast against any scene color
+  ctx.fillStyle=bg;roundRect(ctx,10,64,1004,128,40);ctx.fill();
+  ctx.lineWidth=4;ctx.strokeStyle='rgba(255,255,255,.55)';ctx.stroke();
+  ctx.fillStyle=fg;ctx.font='bold 88px -apple-system,Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;
+  ctx.fillText(text,512,132);
+  const tex=new THREE.CanvasTexture(cv);tex.anisotropy=8;
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
   sp.position.set(x,y,z);sp.scale.set(scale,scale*0.25,1);sp.renderOrder=999;
   group.add(sp);return sp;
@@ -140,20 +155,21 @@ const COL = {
   grass:0x7c9a5e, gravel:0xc9bfa6, trunk:0x6e4a2c, leafA:0x5c8a44, leafB:0xc08a3a
 };
 
-// ---------- TERRAIN (slope: high north -Z, low south +Z toward lake) ----------
-function groundY(z){ // north z=-12 -> 9 ; south z=12 -> -1 ; continues down
-  return 9 - (z+12)/24*10;
+// ---------- TERRAIN (wooded slope: high north -Z = driveway, low south +Z toward lake) ----------
+// Main floor (y=9) is at grade at the back (north); lower floor (y=0) walks out at the south face (z=13).
+// Past the south face the lawn keeps falling gently through the trees to the shoreline (~z=38) and lake bed.
+function groundY(z){
+  if(z<=13) return 9 - (z+13)/26*9;            // 9 at back (z=-13) -> 0 at south wall (z=13)
+  return Math.max(-8, -(z-13)*0.12);            // gentle descent to the water from the walk-out
 }
 (function terrain(){
-  const geo=new THREE.PlaneGeometry(220,220,60,60);
+  const geo=new THREE.PlaneGeometry(240,260,72,72);
   geo.rotateX(-Math.PI/2);
   const pos=geo.attributes.position;
   for(let i=0;i<pos.count;i++){
     const x=pos.getX(i), z=pos.getZ(i);
     let y=groundY(z);
-    if(z>14) y=Math.max(-6, groundY(z)); // keep sloping into the lake bed
-    // gentle noise
-    y += Math.sin(x*0.08)*0.6 + Math.cos(z*0.07)*0.6;
+    y += Math.sin(x*0.07)*0.5 + Math.cos(z*0.06)*0.5; // gentle rolling
     pos.setY(i,y);
   }
   geo.computeVertexNormals();
@@ -161,11 +177,11 @@ function groundY(z){ // north z=-12 -> 9 ; south z=12 -> -1 ; continues down
   m.receiveShadow=true; G.site.add(m);
 })();
 
-// ---------- WATER (lake, south) ----------
+// ---------- WATER (lake, south of the ~z=38 shoreline) ----------
 (function water(){
-  const g=new THREE.PlaneGeometry(220,150);g.rotateX(-Math.PI/2);
-  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:COL.water,roughness:.25,metalness:.3,transparent:true,opacity:.9}));
-  m.position.set(0,-3,95); m.receiveShadow=true; G.site.add(m);
+  const g=new THREE.PlaneGeometry(240,170);g.rotateX(-Math.PI/2);
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:COL.water,roughness:.18,metalness:.45,transparent:true,opacity:.92}));
+  m.position.set(0,-3,118); m.receiveShadow=true; G.site.add(m);
 })();
 
 // ---------- FLOOR SLABS ----------
@@ -197,34 +213,45 @@ room([8,-13,18,0],   LY, COL.bedB,    COL.wall, G.lowerInt);    // Bedroom 4 (bu
 box(4,2.2,1.6,-15,LY+1.1,2,mat(0x9c7b50,{roughness:.7}),G.lowerInt);
 shell([-18,-13,18,13],LY,7.5,COL.shell,G.lowerShell);
 
-// ---------- WRAPAROUND DECK (main level top y=9) ----------
+// ---------- WRAPAROUND DECK (main level top y=9; south + east return) ----------
 (function deck(){
-  const dy=9, t=0.5, plank=mat(COL.deck,{roughness:.85});
-  box(40,t,11,0,dy,18.5,plank,G.deck);            // south strip (lake side)
-  box(11,t,38,23.5,dy,0,plank,G.deck);            // east return
-  // railing posts + top rail (south + east outer edges)
+  const dy=9, t=0.5, plank=mat(COL.deck,{roughness:.8});
+  box(40,t,9,0,dy,17.5,plank,G.deck);             // south strip (lake side), z 13..22
+  box(11,t,36,23.5,dy,-0.5,plank,G.deck);         // east return, z -18.5..17.5
+  // railing posts + top rail (south edge z=22, east edge x=29) — leave a gap where the stairs meet the deck
   const rail=mat(0x8a6840,{roughness:.8});
-  for(let x=-19;x<=19;x+=3) box(0.3,3,0.3,x,dy+1.5,24,rail,G.deck,false);
-  box(40,0.3,0.3,0,dy+3,24,rail,G.deck,false);
-  for(let z=-18;z<=22;z+=3) box(0.3,3,0.3,29,dy+1.5,z,rail,G.deck,false);
-  box(0.3,0.3,42,29,dy+3,2,rail,G.deck,false);
-  // grill + outdoor dining
-  box(2.5,2.5,1.6,-8,dy+1.25,21,mat(0x333a3d,{roughness:.6}),G.deck);   // grill
-  box(6,0.4,3,6,dy+2,20,mat(0x7a5a36,{roughness:.8}),G.deck);          // table
-  box(6.5,2.6,7,16,dy+1.3,12,new THREE.MeshStandardMaterial({color:0xf2efe8,roughness:.6}),G.deck); // glimpse: nothing
-  G.deck.children[G.deck.children.length-1].visible=false;
+  for(let x=-19;x<=19;x+=3) box(0.28,3,0.28,x,dy+1.5,22,rail,G.deck,false);
+  box(40,0.28,0.28,0,dy+3,22,rail,G.deck,false);
+  for(let z=-18;z<=21;z+=3){ if(z>-2.5 && z<6) continue; box(0.28,3,0.28,29,dy+1.5,z,rail,G.deck,false); }
+  box(0.28,0.28,39,29,dy+3,1.5,rail,G.deck,false);
+  // grill, outdoor dining + lounge chairs
+  box(2.4,2.4,1.5,-9,dy+1.2,19.5,mat(0x33393c,{roughness:.55,metalness:.2}),G.deck);  // gas grill
+  box(6,0.35,3,4,dy+1.4,18,mat(0x7a5a36,{roughness:.8}),G.deck);                       // dining table
+  [[0,16.5],[3.5,16.5],[0,19.5],[3.5,19.5]].forEach(([cx,cz])=>box(1.3,1.3,1.3,cx,dy+0.75,cz,mat(0x596a55,{roughness:.85}),G.deck)); // chairs
+  box(3.4,1,5,14,dy+0.6,14,mat(0x6b7d6a,{roughness:.85}),G.deck);                      // lounge sofa
 })();
 
-// ---------- EXTERIOR ENTRY STAIRS (east, grade -> deck) "18 steps" ----------
+// ---------- EXTERIOR ENTRY STAIRS (east lawn -> main-level deck) "18 steps" ----------
+// FIX: these now sit on the LAND on the east (entry) side. They run east, away from the
+// house, descending from the deck's east edge down to a grade landing on the lawn — well
+// clear of the lake (the shoreline/water is far to the south at z>=38).
 (function entryStairs(){
-  const sm=mat(0x9a7a52,{roughness:.85});
-  const steps=16, x=29, topY=9, botZ=26, run=1.0;
+  const tread=mat(0x9a7a52,{roughness:.85});
+  const steps=14, topY=9, z=2, run=0.95, xTop=29.5;
+  const grade=groundY(z), rise=(topY-grade)/steps;
   for(let i=0;i<steps;i++){
-    const y=topY - (i+1)*(topY/steps);
-    box(7,0.5,run, x, y, botZ + i*run, sm, G.site);
+    box(run+0.06, 0.4, 7, xTop+(i+0.5)*run, topY-(i+1)*rise, z, tread, G.site); // thin in X (run), 7ft wide across Z
   }
-  // landing rail
-  box(0.3,3,steps*run,x+3.3,topY-2,botZ+steps*run/2,mat(0x8a6840),G.site,false);
+  const xBot=xTop+steps*run;
+  // grade landing pad on the lawn
+  box(8,0.4,8, xBot+3, grade+0.2, z, mat(COL.gravel,{roughness:1}), G.site);
+  // handrail posts following the flight (both sides), with the deck-side gap
+  const rail=mat(0x8a6840,{roughness:.8});
+  for(let i=0;i<=steps;i+=2){
+    const y=topY-i*rise, x=xTop+i*run;
+    box(0.22,2.6,0.22,x,y+1.3,z-3.4,rail,G.site,false);
+    box(0.22,2.6,0.22,x,y+1.3,z+3.4,rail,G.site,false);
+  }
 })();
 
 // ---------- INTERIOR SPIRAL STAIRCASE (center, lower->main) ----------
@@ -250,45 +277,47 @@ shell([-18,-13,18,13],LY,7.5,COL.shell,G.lowerShell);
   [-20,20].forEach(x=>{const g=new THREE.Mesh(new THREE.BoxGeometry(0.6,5.5,16),mat(COL.shell));g.position.set(x,20.7,0);G.roof.add(g);});
 })();
 
-// ---------- GRAVEL PATH (deck SE -> dock) ----------
+// ---------- GRAVEL PATH (deck SE corner -> down the slope to the shoreline) ----------
 (function path(){
   const gm=mat(COL.gravel,{roughness:1});
-  const pts=[[14,26],[12,34],[8,42],[5,50],[3,58]];
-  pts.forEach(([x,z])=>{ box(4.5,0.3,5, x, groundY(z)+0.2, z, gm, G.site); });
+  const pts=[[13,24],[11,28],[8,32],[5,36],[3,39]];
+  pts.forEach(([x,z])=>{ box(4.5,0.3,5, x, groundY(z)+0.15, z, gm, G.site); });
 })();
 
-// ---------- PRIVATE COVERED DOCK (pontoon + blue floating mat) ----------
+// ---------- PRIVATE COVERED DOCK (pontoon + blue floating mat), out over the water ----------
 (function dock(){
-  const dx=2, dz=66, deckY=-1.8;
-  // gangway
-  box(4,0.4,14,dx, -1.2, dz-12, mat(0xa9824f,{roughness:.85}), G.site);
+  const dx=2, dz=56, deckY=-1.8;
+  // gangway from the shore out to the platform
+  box(4,0.4,14,dx, -1.4, dz-12, mat(0xa9824f,{roughness:.85}), G.site);
   // platform
   box(16,0.4,13,dx,deckY,dz,mat(0xb98a54,{roughness:.85}),G.site);
   // posts + canopy roof
-  const pm=mat(0x6f7a80,{roughness:.6});
-  [[-7,-6],[7,-6],[-7,6],[7,6]].forEach(([ox,oz])=>box(0.5,5,0.5,dx+ox,deckY+2.5,dz+oz,pm,G.site));
-  box(17,0.4,14,dx,deckY+5,dz,new THREE.MeshStandardMaterial({color:0x8c969b,roughness:.5,metalness:.4}),G.site);
+  const pm=mat(0x6f7a80,{roughness:.55,metalness:.2});
+  [[-7,-6],[7,-6],[-7,6],[7,6]].forEach(([ox,oz])=>box(0.4,5,0.4,dx+ox,deckY+2.5,dz+oz,pm,G.site));
+  box(17,0.45,14,dx,deckY+5,dz,new THREE.MeshStandardMaterial({color:0x9aa4a9,roughness:.45,metalness:.4}),G.site); // canopy
   // pontoon boat in slip (east side)
-  box(7,1,3,dx+10,deckY-0.3,dz,mat(0xdedede,{roughness:.5}),G.site);
-  box(7,0.5,3,dx+10,deckY+0.6,dz,mat(0x445a6a,{roughness:.6}),G.site);
-  // blue floating water mat (west side, on water)
-  const matFloat=box(10,0.25,4,dx-13,-2.7,dz+2,new THREE.MeshStandardMaterial({color:0x2b6fb0,roughness:.4}),G.site);
-  // ladder + chairs (small)
+  box(7,1,3,dx+10,deckY-0.3,dz,mat(0xe2e2e2,{roughness:.45}),G.site);
+  box(7,0.5,3,dx+10,deckY+0.6,dz,mat(0x445a6a,{roughness:.55}),G.site);
+  // blue floating water mat (west side, on the water)
+  box(10,0.22,4,dx-13,-2.78,dz+2,new THREE.MeshStandardMaterial({color:0x2b6fb0,roughness:.35}),G.site);
+  // dock box / storage
   box(2,1.2,2,dx-5,deckY+0.6,dz-5,mat(0x8a5a3a,{roughness:.8}),G.site);
 })();
 
 // ---------- TREES (wooded slope) ----------
 (function trees(){
   const positions=[];
-  for(let i=0;i<70;i++){
-    const x=(Math.random()-0.5)*180, z=(Math.random()-0.5)*150 - 10;
-    // keep off the house footprint, deck, path corridor and lake
-    if(Math.abs(x)<32 && z>-22 && z<28) continue;
-    if(z>40) continue; // not in the lake
+  for(let i=0;i<80;i++){
+    const x=(Math.random()-0.5)*200, z=(Math.random()-0.5)*150 - 12;
+    // keep off the house + deck + east stairs footprint
+    if(x>-22 && x<48 && z>-22 && z<24) continue;
+    // keep off the path/dock corridor down to the lake
+    if(x>-6 && x<16 && z>=24) continue;
+    if(z>37) continue; // stop at the shoreline, not in the lake
     positions.push([x,z]);
   }
   positions.forEach(([x,z])=>{
-    const gy=groundY(z); if(gy<-2) return;
+    const gy=groundY(z); if(gy<-2.4) return;
     const h=6+Math.random()*8;
     box(0.8,h*0.4,0.8,x,gy+h*0.2,z,mat(COL.trunk,{roughness:1}),G.site,false);
     const leaf=Math.random()>0.4?COL.leafA:COL.leafB;
@@ -310,12 +339,12 @@ label('Bath',-2,LY+8,-6.5,G.lowerLbl,5);
 label('Laundry',5,LY+8,-6.5,G.lowerLbl,7);
 label('Bedroom 4 (bunk)',13,LY+8,-6.5,G.lowerLbl,11);
 label('Spiral stair',-1,5,-6,G.lowerLbl,8,'rgba(44,125,160,.9)');
-label('Entry stairs (18 steps)',31,7,30,G.siteLbl,14,'rgba(60,90,50,.9)');
-label('Gravel path to dock',9,2,45,G.siteLbl,13,'rgba(120,90,50,.9)');
-label('Private covered dock',2,3.5,66,G.siteLbl,14,'rgba(40,90,110,.92)');
-label('Pontoon + blue floating mat',-6,1,72,G.siteLbl,13,'rgba(40,90,140,.9)');
-label('Lake Hartwell',2,1.5,105,G.siteLbl,18,'rgba(30,110,140,.85)');
-label('Driveway / Entry',0,11,-26,G.siteLbl,13,'rgba(60,70,80,.85)');
+label('Entry stairs (18 steps)',37,8,2,G.siteLbl,14,'rgba(60,90,50,.92)');
+label('Gravel path to dock',8,3,32,G.siteLbl,13,'rgba(120,90,50,.92)');
+label('Private covered dock',2,4.5,56,G.siteLbl,14,'rgba(40,90,110,.92)');
+label('Pontoon + blue floating mat',-7,1,62,G.siteLbl,12,'rgba(40,90,140,.92)');
+label('Lake Hartwell',2,1.5,120,G.siteLbl,18,'rgba(30,110,140,.88)');
+label('Driveway / Entry',0,13,-26,G.siteLbl,13,'rgba(60,70,80,.88)');
 
 // ---------- MODE TOGGLE ----------
 function setMode(mode){
