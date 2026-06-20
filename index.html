@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>@67lake — Interactive 3D Layout · Lake Hartwell</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#bfe0ef;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#16323f}
+  #c{position:fixed;inset:0;display:block}
+  #ui{position:fixed;top:14px;left:14px;background:rgba(255,255,255,.82);backdrop-filter:blur(6px);border-radius:14px;padding:12px 14px;box-shadow:0 6px 22px rgba(0,0,0,.18);max-width:300px}
+  #ui h1{margin:0 0 2px;font-size:16px;letter-spacing:.2px}
+  #ui p{margin:0 0 10px;font-size:11.5px;color:#557}
+  .btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .btns button{flex:1 1 auto;border:0;border-radius:9px;padding:7px 9px;font-size:12px;font-weight:600;cursor:pointer;background:#e7eef1;color:#234;transition:.15s}
+  .btns button:hover{background:#d3e0e6}
+  .btns button.active{background:#2c7da0;color:#fff;box-shadow:0 2px 8px rgba(44,125,160,.4)}
+  #legend{font-size:11px;color:#456;line-height:1.5}
+  #legend b{color:#234}
+  #reset{width:100%;margin-top:8px;border:1px solid #c4d3da;background:#fff;color:#2c7da0;border-radius:9px;padding:6px;font-size:11.5px;font-weight:600;cursor:pointer}
+  #hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.78);border-radius:20px;padding:6px 16px;font-size:11.5px;color:#456;box-shadow:0 3px 12px rgba(0,0,0,.15)}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#bfe0ef;font-size:15px;color:#2c7da0;z-index:5}
+</style>
+</head>
+<body>
+<div id="loading">Loading 3D model…</div>
+<canvas id="c"></canvas>
+<div id="ui">
+  <h1>@67lake — 3D Layout</h1>
+  <p>Private Lakefront Home · Lake Hartwell · 4 BR / 3 BA · 2 stories</p>
+  <div class="btns" id="modes">
+    <button data-mode="both" class="active">Both floors</button>
+    <button data-mode="main">Main</button>
+    <button data-mode="lower">Lower</button>
+    <button data-mode="exterior">Exterior</button>
+  </div>
+  <div class="btns">
+    <button id="viewHouse">⌂ House view</button>
+    <button id="viewSite">⛵ Site + dock</button>
+  </div>
+  <div id="legend">
+    <b>Main floor:</b> great room, kitchen, 2 BR, deck<br>
+    <b>Lower floor:</b> family/sunroom, 2 BR, laundry<br>
+    <b>Outside:</b> entry stairs → deck → path → dock
+  </div>
+  <button id="reset">⟳ Reset view</button>
+</div>
+<div id="hint">Drag to orbit · scroll to zoom · right-drag to pan</div>
+
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const FT = 1; // 1 unit = 1 foot
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xbfe0ef);
+scene.fog = new THREE.Fog(0xbfe0ef, 130, 320);
+
+const camera = new THREE.PerspectiveCamera(46, innerWidth/innerHeight, 0.5, 1000);
+const HOME_POS = new THREE.Vector3(34, 78, 96), HOME_TGT = new THREE.Vector3(0, 5, 6);
+const SITE_POS = new THREE.Vector3(118, 70, 52), SITE_TGT = new THREE.Vector3(2, 0, 44);
+camera.position.copy(HOME_POS);
+
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.copy(HOME_TGT);
+controls.maxPolarAngle = Math.PI*0.49;
+controls.minDistance = 25;
+controls.maxDistance = 240;
+
+// ---------- lights ----------
+const hemi = new THREE.HemisphereLight(0xdff1ff, 0x6b7b5a, 0.85);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff3df, 1.05);
+sun.position.set(60, 90, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 320;
+sun.shadow.camera.left=-90; sun.shadow.camera.right=90; sun.shadow.camera.top=90; sun.shadow.camera.bottom=-90;
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+
+// ---------- groups ----------
+const G = {
+  mainShell:new THREE.Group(), mainInt:new THREE.Group(), mainLbl:new THREE.Group(),
+  lowerShell:new THREE.Group(), lowerInt:new THREE.Group(), lowerLbl:new THREE.Group(),
+  deck:new THREE.Group(), roof:new THREE.Group(), site:new THREE.Group(), siteLbl:new THREE.Group()
+};
+Object.values(G).forEach(g=>scene.add(g));
+
+// ---------- helpers ----------
+function mat(color,opts={}){return new THREE.MeshStandardMaterial(Object.assign({color,roughness:.9,metalness:.0},opts));}
+function box(w,h,d,x,y,z,material,group,shadow=true){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+  m.position.set(x,y,z); if(shadow){m.castShadow=true;m.receiveShadow=true;}
+  group.add(m); return m;
+}
+// room: rect [x0,z0,x1,z1]; draws colored floor tile + low partition walls
+function room(rect,baseY,floorColor,wallColor,group,wallH=5.4){
+  const [x0,z0,x1,z1]=rect, w=x1-x0, d=z1-z0, cx=(x0+x1)/2, cz=(z0+z1)/2, t=0.4;
+  box(w-0.3,0.5,d-0.3,cx,baseY+0.45,cz,mat(floorColor,{roughness:1}),group); // floor tile (raised, readable from above)
+  const wm=mat(wallColor,{roughness:.95});
+  box(w,wallH,t,cx,baseY+wallH/2,z0,wm,group);
+  box(w,wallH,t,cx,baseY+wallH/2,z1,wm,group);
+  box(t,wallH,d,x0,baseY+wallH/2,cz,wm,group);
+  box(t,wallH,d,x1,baseY+wallH/2,cz,wm,group);
+}
+// perimeter shell wall (taller, opaque) for a footprint rect
+function shell(rect,baseY,h,color,group){
+  const [x0,z0,x1,z1]=rect,w=x1-x0,d=z1-z0,cx=(x0+x1)/2,cz=(z0+z1)/2,t=0.6;
+  const wm=mat(color,{roughness:.85});
+  box(w,h,t,cx,baseY+h/2,z0,wm,group);
+  box(w,h,t,cx,baseY+h/2,z1,wm,group);
+  box(t,h,d,x0,baseY+h/2,cz,wm,group);
+  box(t,h,d,x1,baseY+h/2,cz,wm,group);
+}
+function label(text,x,y,z,group,scale=7,bg='rgba(20,50,63,.9)',fg='#fff'){
+  const cv=document.createElement('canvas');const s=4;cv.width=512;cv.height=128;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle=bg;roundRect(ctx,4,30,504,68,20);ctx.fill();
+  ctx.fillStyle=fg;ctx.font='bold 44px -apple-system,Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(text,256,66);
+  const tex=new THREE.CanvasTexture(cv);tex.anisotropy=4;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
+  sp.position.set(x,y,z);sp.scale.set(scale,scale*0.25,1);sp.renderOrder=999;
+  group.add(sp);return sp;
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+// ---------- palette ----------
+const COL = {
+  floorWood:0xd9b98a, floorTile:0xe9e6df, kitchen:0xf2efe8, great:0xe6c9a0,
+  bedA:0x8fbce0, bedB:0x9ccf9a, bath:0xc3ccd2, family:0xe0b878, laundry:0xb9c4c8,
+  wall:0xf3ece0, shell:0xc9a874, deck:0xb98a54, roof:0x6f5236, water:0x3f93ad,
+  grass:0x7c9a5e, gravel:0xc9bfa6, trunk:0x6e4a2c, leafA:0x5c8a44, leafB:0xc08a3a
+};
+
+// ---------- TERRAIN (slope: high north -Z, low south +Z toward lake) ----------
+function groundY(z){ // north z=-12 -> 9 ; south z=12 -> -1 ; continues down
+  return 9 - (z+12)/24*10;
+}
+(function terrain(){
+  const geo=new THREE.PlaneGeometry(220,220,60,60);
+  geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i), z=pos.getZ(i);
+    let y=groundY(z);
+    if(z>14) y=Math.max(-6, groundY(z)); // keep sloping into the lake bed
+    // gentle noise
+    y += Math.sin(x*0.08)*0.6 + Math.cos(z*0.07)*0.6;
+    pos.setY(i,y);
+  }
+  geo.computeVertexNormals();
+  const m=new THREE.Mesh(geo,mat(COL.grass,{roughness:1}));
+  m.receiveShadow=true; G.site.add(m);
+})();
+
+// ---------- WATER (lake, south) ----------
+(function water(){
+  const g=new THREE.PlaneGeometry(220,150);g.rotateX(-Math.PI/2);
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:COL.water,roughness:.25,metalness:.3,transparent:true,opacity:.9}));
+  m.position.set(0,-3,95); m.receiveShadow=true; G.site.add(m);
+})();
+
+// ---------- FLOOR SLABS ----------
+const FP=[-18,-13,18,13]; // footprint
+box(FP[2]-FP[0],0.6,FP[3]-FP[1],0,-0.3,0,mat(COL.floorWood),G.lowerInt); // lower slab
+box(FP[2]-FP[0],0.6,FP[3]-FP[1],0,8.7,0,mat(COL.floorWood),G.mainInt);   // main slab
+
+// ---------- MAIN FLOOR ROOMS (baseY = 9) ----------
+const MY=9;
+room([-18,0,-5,13], MY, COL.kitchen, COL.wall, G.mainInt);      // Kitchen
+room([-5,0,18,13],  MY, COL.great,   COL.wall, G.mainInt);      // Great room (living+dining)
+room([-18,-13,-6,0],MY, COL.bedA,    COL.wall, G.mainInt);      // Bedroom 1 (king)
+room([-6,-13,5,0],  MY, COL.bath,    COL.wall, G.mainInt);      // Bath + hall + stair
+room([5,-13,18,0],  MY, COL.bedB,    COL.wall, G.mainInt);      // Bedroom 2 (deck access)
+// fireplace block in great room (north interior wall)
+box(3,5,1.2,11,MY+2.5,0.8,mat(0xa6553a,{roughness:1}),G.mainInt);
+// kitchen island
+box(5,2.2,2.2,-12,MY+1.1,7,mat(0xb9b2a4,{roughness:.7}),G.mainInt);
+shell([-18,-13,18,13],MY,7.5,COL.shell,G.mainShell);
+
+// ---------- LOWER FLOOR ROOMS (baseY = 0) ----------
+const LY=0;
+room([-18,0,18,13],  LY, COL.family,  COL.wall, G.lowerInt);    // Family/Sunroom (walk-out)
+room([-18,-13,-6,0], LY, COL.bedA,    COL.wall, G.lowerInt);    // Bedroom 3
+room([-6,-13,2,0],   LY, COL.bath,    COL.wall, G.lowerInt);    // Bath
+room([2,-13,8,0],    LY, COL.laundry, COL.wall, G.lowerInt);    // Laundry
+room([8,-13,18,0],   LY, COL.bedB,    COL.wall, G.lowerInt);    // Bedroom 4 (bunk)
+// wet bar block
+box(4,2.2,1.6,-15,LY+1.1,2,mat(0x9c7b50,{roughness:.7}),G.lowerInt);
+shell([-18,-13,18,13],LY,7.5,COL.shell,G.lowerShell);
+
+// ---------- WRAPAROUND DECK (main level top y=9) ----------
+(function deck(){
+  const dy=9, t=0.5, plank=mat(COL.deck,{roughness:.85});
+  box(40,t,11,0,dy,18.5,plank,G.deck);            // south strip (lake side)
+  box(11,t,38,23.5,dy,0,plank,G.deck);            // east return
+  // railing posts + top rail (south + east outer edges)
+  const rail=mat(0x8a6840,{roughness:.8});
+  for(let x=-19;x<=19;x+=3) box(0.3,3,0.3,x,dy+1.5,24,rail,G.deck,false);
+  box(40,0.3,0.3,0,dy+3,24,rail,G.deck,false);
+  for(let z=-18;z<=22;z+=3) box(0.3,3,0.3,29,dy+1.5,z,rail,G.deck,false);
+  box(0.3,0.3,42,29,dy+3,2,rail,G.deck,false);
+  // grill + outdoor dining
+  box(2.5,2.5,1.6,-8,dy+1.25,21,mat(0x333a3d,{roughness:.6}),G.deck);   // grill
+  box(6,0.4,3,6,dy+2,20,mat(0x7a5a36,{roughness:.8}),G.deck);          // table
+  box(6.5,2.6,7,16,dy+1.3,12,new THREE.MeshStandardMaterial({color:0xf2efe8,roughness:.6}),G.deck); // glimpse: nothing
+  G.deck.children[G.deck.children.length-1].visible=false;
+})();
+
+// ---------- EXTERIOR ENTRY STAIRS (east, grade -> deck) "18 steps" ----------
+(function entryStairs(){
+  const sm=mat(0x9a7a52,{roughness:.85});
+  const steps=16, x=29, topY=9, botZ=26, run=1.0;
+  for(let i=0;i<steps;i++){
+    const y=topY - (i+1)*(topY/steps);
+    box(7,0.5,run, x, y, botZ + i*run, sm, G.site);
+  }
+  // landing rail
+  box(0.3,3,steps*run,x+3.3,topY-2,botZ+steps*run/2,mat(0x8a6840),G.site,false);
+})();
+
+// ---------- INTERIOR SPIRAL STAIRCASE (center, lower->main) ----------
+(function spiral(){
+  const cx=-1, cz=-6, r=2.6, steps=16, pole=mat(0x8a6a48,{roughness:.7});
+  box(0.5,9,0.5,cx,4.5,cz,pole,G.lowerInt,false);
+  for(let i=0;i<steps;i++){
+    const a=i/steps*Math.PI*2.2, y=0.6+i*(8/steps);
+    const tx=cx+Math.cos(a)*r, tz=cz+Math.sin(a)*r;
+    const tread=box(2.6,0.3,1.4,tx,y,tz,mat(0xb98a54,{roughness:.8}),G.lowerInt,false);
+    tread.rotation.y=-a;
+  }
+})();
+
+// ---------- ROOF (exterior mode) ----------
+(function roof(){
+  const eaveY=18, ridgeY=23.5;
+  const a=new THREE.Mesh(new THREE.BoxGeometry(40,0.6,16),mat(COL.roof,{roughness:.9}));
+  a.position.set(0,(eaveY+ridgeY)/2,-7);a.rotation.x=-0.6;a.castShadow=true;G.roof.add(a);
+  const b=new THREE.Mesh(new THREE.BoxGeometry(40,0.6,16),mat(COL.roof,{roughness:.9}));
+  b.position.set(0,(eaveY+ridgeY)/2,7);b.rotation.x=0.6;b.castShadow=true;G.roof.add(b);
+  // gable ends fill
+  [-20,20].forEach(x=>{const g=new THREE.Mesh(new THREE.BoxGeometry(0.6,5.5,16),mat(COL.shell));g.position.set(x,20.7,0);G.roof.add(g);});
+})();
+
+// ---------- GRAVEL PATH (deck SE -> dock) ----------
+(function path(){
+  const gm=mat(COL.gravel,{roughness:1});
+  const pts=[[14,26],[12,34],[8,42],[5,50],[3,58]];
+  pts.forEach(([x,z])=>{ box(4.5,0.3,5, x, groundY(z)+0.2, z, gm, G.site); });
+})();
+
+// ---------- PRIVATE COVERED DOCK (pontoon + blue floating mat) ----------
+(function dock(){
+  const dx=2, dz=66, deckY=-1.8;
+  // gangway
+  box(4,0.4,14,dx, -1.2, dz-12, mat(0xa9824f,{roughness:.85}), G.site);
+  // platform
+  box(16,0.4,13,dx,deckY,dz,mat(0xb98a54,{roughness:.85}),G.site);
+  // posts + canopy roof
+  const pm=mat(0x6f7a80,{roughness:.6});
+  [[-7,-6],[7,-6],[-7,6],[7,6]].forEach(([ox,oz])=>box(0.5,5,0.5,dx+ox,deckY+2.5,dz+oz,pm,G.site));
+  box(17,0.4,14,dx,deckY+5,dz,new THREE.MeshStandardMaterial({color:0x8c969b,roughness:.5,metalness:.4}),G.site);
+  // pontoon boat in slip (east side)
+  box(7,1,3,dx+10,deckY-0.3,dz,mat(0xdedede,{roughness:.5}),G.site);
+  box(7,0.5,3,dx+10,deckY+0.6,dz,mat(0x445a6a,{roughness:.6}),G.site);
+  // blue floating water mat (west side, on water)
+  const matFloat=box(10,0.25,4,dx-13,-2.7,dz+2,new THREE.MeshStandardMaterial({color:0x2b6fb0,roughness:.4}),G.site);
+  // ladder + chairs (small)
+  box(2,1.2,2,dx-5,deckY+0.6,dz-5,mat(0x8a5a3a,{roughness:.8}),G.site);
+})();
+
+// ---------- TREES (wooded slope) ----------
+(function trees(){
+  const positions=[];
+  for(let i=0;i<70;i++){
+    const x=(Math.random()-0.5)*180, z=(Math.random()-0.5)*150 - 10;
+    // keep off the house footprint, deck, path corridor and lake
+    if(Math.abs(x)<32 && z>-22 && z<28) continue;
+    if(z>40) continue; // not in the lake
+    positions.push([x,z]);
+  }
+  positions.forEach(([x,z])=>{
+    const gy=groundY(z); if(gy<-2) return;
+    const h=6+Math.random()*8;
+    box(0.8,h*0.4,0.8,x,gy+h*0.2,z,mat(COL.trunk,{roughness:1}),G.site,false);
+    const leaf=Math.random()>0.4?COL.leafA:COL.leafB;
+    const c=new THREE.Mesh(new THREE.ConeGeometry(2.6+Math.random()*1.5,h,7),mat(leaf,{roughness:1}));
+    c.position.set(x,gy+h*0.4+h*0.4,z);c.castShadow=true;G.site.add(c);
+  });
+})();
+
+// ---------- LABELS ----------
+label('Great Room',6,MY+8,7,G.mainLbl,11);
+label('Kitchen',-12,MY+8,7,G.mainLbl,9);
+label('Bedroom 1 (king)',-12,MY+8,-6.5,G.mainLbl,11);
+label('Bath',-0.5,MY+8,-6.5,G.mainLbl,6);
+label('Bedroom 2',11.5,MY+8,-6.5,G.mainLbl,9);
+label('Wraparound Lakeside Deck',6,MY+5,20,G.mainLbl,15,'rgba(120,80,40,.92)');
+label('Family Room / Sunroom',4,LY+8,7,G.lowerLbl,13);
+label('Bedroom 3',-12,LY+8,-6.5,G.lowerLbl,9);
+label('Bath',-2,LY+8,-6.5,G.lowerLbl,5);
+label('Laundry',5,LY+8,-6.5,G.lowerLbl,7);
+label('Bedroom 4 (bunk)',13,LY+8,-6.5,G.lowerLbl,11);
+label('Spiral stair',-1,5,-6,G.lowerLbl,8,'rgba(44,125,160,.9)');
+label('Entry stairs (18 steps)',31,7,30,G.siteLbl,14,'rgba(60,90,50,.9)');
+label('Gravel path to dock',9,2,45,G.siteLbl,13,'rgba(120,90,50,.9)');
+label('Private covered dock',2,3.5,66,G.siteLbl,14,'rgba(40,90,110,.92)');
+label('Pontoon + blue floating mat',-6,1,72,G.siteLbl,13,'rgba(40,90,140,.9)');
+label('Lake Hartwell',2,1.5,105,G.siteLbl,18,'rgba(30,110,140,.85)');
+label('Driveway / Entry',0,11,-26,G.siteLbl,13,'rgba(60,70,80,.85)');
+
+// ---------- MODE TOGGLE ----------
+function setMode(mode){
+  const showMain = mode!=='lower';
+  const showLower = mode!=='main';
+  const interior = mode!=='exterior';
+  G.mainShell.visible = showMain;
+  G.mainInt.visible = showMain && interior;
+  G.mainLbl.visible = showMain && interior;
+  G.lowerShell.visible = showLower;
+  G.lowerInt.visible = showLower && interior;
+  G.lowerLbl.visible = showLower && interior;
+  G.deck.visible = mode!=='lower';
+  G.roof.visible = mode==='exterior';
+  G.siteLbl.visible = interior;
+  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+}
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+function flyTo(pos,tgt){camera.position.copy(pos);controls.target.copy(tgt);controls.update();}
+document.getElementById('reset').onclick=()=>flyTo(HOME_POS,HOME_TGT);
+document.getElementById('viewHouse').onclick=()=>flyTo(HOME_POS,HOME_TGT);
+document.getElementById('viewSite').onclick=()=>flyTo(SITE_POS,SITE_TGT);
+setMode('both');
+
+// ---------- render ----------
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+document.getElementById('loading').style.display='none';
+(function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);})();
+</script>
+</body>
+</html>
