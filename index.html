@@ -5,44 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>@67lake — Interactive 3D Layout · Lake Hartwell</title>
 <style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#bfe0ef;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#16323f}
-  #c{position:fixed;inset:0;display:block}
-  #ui{position:fixed;top:14px;left:14px;background:rgba(255,255,255,.82);backdrop-filter:blur(6px);border-radius:14px;padding:12px 14px;box-shadow:0 6px 22px rgba(0,0,0,.18);max-width:300px}
-  #ui h1{margin:0 0 2px;font-size:16px;letter-spacing:.2px}
-  #ui p{margin:0 0 10px;font-size:11.5px;color:#557}
-  .btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-  .btns button{flex:1 1 auto;border:0;border-radius:9px;padding:7px 9px;font-size:12px;font-weight:600;cursor:pointer;background:#e7eef1;color:#234;transition:.15s}
-  .btns button:hover{background:#d3e0e6}
-  .btns button.active{background:#2c7da0;color:#fff;box-shadow:0 2px 8px rgba(44,125,160,.4)}
-  #legend{font-size:11px;color:#456;line-height:1.5}
-  #legend b{color:#234}
-  #reset{width:100%;margin-top:8px;border:1px solid #c4d3da;background:#fff;color:#2c7da0;border-radius:9px;padding:6px;font-size:11.5px;font-weight:600;cursor:pointer}
-  #hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.78);border-radius:20px;padding:6px 16px;font-size:11.5px;color:#456;box-shadow:0 3px 12px rgba(0,0,0,.15)}
-  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#bfe0ef;font-size:15px;color:#2c7da0;z-index:5}
+html,body{margin:0;height:100%;overflow:hidden;background:#bfe0ef;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#16323f}
+#c{position:fixed;inset:0;display:block}
+#ui{position:fixed;top:14px;left:14px;background:rgba(255,255,255,.82);backdrop-filter:blur(6px);border-radius:14px;padding:12px 14px;box-shadow:0 6px 22px rgba(0,0,0,.18);max-width:300px}
+#ui h1{margin:0 0 2px;font-size:16px;letter-spacing:.2px}
+#ui p{margin:0 0 10px;font-size:11.5px;color:#557}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.btns button{flex:1 1 auto;border:0;border-radius:9px;padding:7px 9px;font-size:12px;font-weight:600;cursor:pointer;background:#e7eef1;color:#234;transition:.15s}
+.btns button:hover{background:#d3e0e6}
+.btns button.active{background:#2c7da0;color:#fff;box-shadow:0 2px 8px rgba(44,125,160,.4)}
+#tour{flex:1 1 100%;background:#e8a33d;color:#fff;box-shadow:0 2px 8px rgba(232,163,61,.4)}
+#tour:hover{background:#d8932d}
+#tour.active{background:#c2412e;box-shadow:0 2px 8px rgba(194,65,46,.4)}
+#legend{font-size:11px;color:#456;line-height:1.5}
+#legend b{color:#234}
+#reset{width:100%;margin-top:8px;border:1px solid #c4d3da;background:#fff;color:#2c7da0;border-radius:9px;padding:6px;font-size:11.5px;font-weight:600;cursor:pointer}
+#hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.78);border-radius:20px;padding:6px 16px;font-size:11.5px;color:#456;box-shadow:0 3px 12px rgba(0,0,0,.15)}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#bfe0ef;font-size:15px;color:#2c7da0;z-index:5}
 </style>
 </head>
 <body>
 <div id="loading">Loading 3D model…</div>
 <canvas id="c"></canvas>
 <div id="ui">
-  <h1>@67lake — 3D Layout</h1>
-  <p>Private Lakefront Home · Lake Hartwell · 4 BR / 3 BA · 2 stories</p>
-  <div class="btns" id="modes">
-    <button data-mode="both" class="active">Both floors</button>
-    <button data-mode="main">Main</button>
-    <button data-mode="lower">Lower</button>
-    <button data-mode="exterior">Exterior</button>
-  </div>
-  <div class="btns">
-    <button id="viewHouse">⌂ House view</button>
-    <button id="viewSite">⛵ Site + dock</button>
-  </div>
-  <div id="legend">
-    <b>Main floor:</b> great room, kitchen, 2 BR, deck<br>
-    <b>Lower floor:</b> family/sunroom, 2 BR, laundry<br>
-    <b>Outside:</b> entry stairs → deck → path → dock
-  </div>
-  <button id="reset">⟳ Reset view</button>
+<h1>@67lake — 3D Layout</h1>
+<p>Private Lakefront Home · Lake Hartwell · 4 BR / 3 BA · 2 stories</p>
+<div class="btns" id="modes">
+<button data-mode="both" class="active">Both floors</button>
+<button data-mode="main">Main</button>
+<button data-mode="lower">Lower</button>
+<button data-mode="exterior">Exterior</button>
+</div>
+<div class="btns">
+<button id="viewHouse">⌂ House view</button>
+<button id="viewSite">⛵ Site + dock</button>
+</div>
+<div class="btns">
+<button id="tour">▶ Guided tour</button>
+</div>
+<div id="legend">
+<b>Main floor:</b> great room, kitchen, 2 BR, deck<br>
+<b>Lower floor:</b> family/sunroom, 2 BR, laundry<br>
+<b>Outside:</b> entry stairs → deck → path → dock
+</div>
+<button id="reset">⟳ Reset view</button>
 </div>
 <div id="hint">Drag to orbit · scroll to zoom · right-drag to pan</div>
 
@@ -60,7 +66,7 @@ const SITE_POS = new THREE.Vector3(92, 62, 8), SITE_TGT = new THREE.Vector3(4, -
 camera.position.copy(HOME_POS);
 
 const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); // cap DPR for 60fps
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -99,103 +105,103 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.20));
 
 // ---------- groups ----------
 const G = {
-  mainShell:new THREE.Group(), mainInt:new THREE.Group(), mainLbl:new THREE.Group(),
-  lowerShell:new THREE.Group(), lowerInt:new THREE.Group(), lowerLbl:new THREE.Group(),
-  deck:new THREE.Group(), roof:new THREE.Group(), site:new THREE.Group(), siteLbl:new THREE.Group()
+mainShell:new THREE.Group(), mainInt:new THREE.Group(), mainLbl:new THREE.Group(),
+lowerShell:new THREE.Group(), lowerInt:new THREE.Group(), lowerLbl:new THREE.Group(),
+deck:new THREE.Group(), roof:new THREE.Group(), site:new THREE.Group(), siteLbl:new THREE.Group()
 };
 Object.values(G).forEach(g=>scene.add(g));
 
 // ---------- helpers ----------
 function mat(color,opts={}){return new THREE.MeshStandardMaterial(Object.assign({color,roughness:.9,metalness:.0},opts));}
 function box(w,h,d,x,y,z,material,group,shadow=true){
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-  m.position.set(x,y,z); if(shadow){m.castShadow=true;m.receiveShadow=true;}
-  group.add(m); return m;
+const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+m.position.set(x,y,z); if(shadow){m.castShadow=true;m.receiveShadow=true;}
+group.add(m); return m;
 }
 // room: rect [x0,z0,x1,z1]; draws colored floor tile + low partition walls
 function room(rect,baseY,floorColor,wallColor,group,wallH=5.4){
-  const [x0,z0,x1,z1]=rect, w=x1-x0, d=z1-z0, cx=(x0+x1)/2, cz=(z0+z1)/2, t=0.4;
-  box(w-0.3,0.5,d-0.3,cx,baseY+0.45,cz,mat(floorColor,{roughness:1}),group); // floor tile (raised, readable from above)
-  const wm=mat(wallColor,{roughness:.95});
-  box(w,wallH,t,cx,baseY+wallH/2,z0,wm,group);
-  box(w,wallH,t,cx,baseY+wallH/2,z1,wm,group);
-  box(t,wallH,d,x0,baseY+wallH/2,cz,wm,group);
-  box(t,wallH,d,x1,baseY+wallH/2,cz,wm,group);
+const [x0,z0,x1,z1]=rect, w=x1-x0, d=z1-z0, cx=(x0+x1)/2, cz=(z0+z1)/2, t=0.4;
+box(w-0.3,0.5,d-0.3,cx,baseY+0.45,cz,mat(floorColor,{roughness:1}),group); // floor tile (raised, readable from above)
+const wm=mat(wallColor,{roughness:.95});
+box(w,wallH,t,cx,baseY+wallH/2,z0,wm,group);
+box(w,wallH,t,cx,baseY+wallH/2,z1,wm,group);
+box(t,wallH,d,x0,baseY+wallH/2,cz,wm,group);
+box(t,wallH,d,x1,baseY+wallH/2,cz,wm,group);
 }
 // perimeter shell wall (taller, opaque) for a footprint rect
 function shell(rect,baseY,h,color,group){
-  const [x0,z0,x1,z1]=rect,w=x1-x0,d=z1-z0,cx=(x0+x1)/2,cz=(z0+z1)/2,t=0.6;
-  const wm=mat(color,{roughness:.85});
-  box(w,h,t,cx,baseY+h/2,z0,wm,group);
-  box(w,h,t,cx,baseY+h/2,z1,wm,group);
-  box(t,h,d,x0,baseY+h/2,cz,wm,group);
-  box(t,h,d,x1,baseY+h/2,cz,wm,group);
+const [x0,z0,x1,z1]=rect,w=x1-x0,d=z1-z0,cx=(x0+x1)/2,cz=(z0+z1)/2,t=0.6;
+const wm=mat(color,{roughness:.85});
+box(w,h,t,cx,baseY+h/2,z0,wm,group);
+box(w,h,t,cx,baseY+h/2,z1,wm,group);
+box(t,h,d,x0,baseY+h/2,cz,wm,group);
+box(t,h,d,x1,baseY+h/2,cz,wm,group);
 }
 function label(text,x,y,z,group,scale=7,bg='rgba(20,50,63,.92)',fg='#fff'){
-  const cv=document.createElement('canvas');cv.width=1024;cv.height=256;
-  const ctx=cv.getContext('2d');
-  // pill background with a thin light border for contrast against any scene color
-  ctx.fillStyle=bg;roundRect(ctx,10,64,1004,128,40);ctx.fill();
-  ctx.lineWidth=4;ctx.strokeStyle='rgba(255,255,255,.55)';ctx.stroke();
-  ctx.fillStyle=fg;ctx.font='bold 88px -apple-system,Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;
-  ctx.fillText(text,512,132);
-  const tex=new THREE.CanvasTexture(cv);tex.anisotropy=8;
-  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
-  sp.position.set(x,y,z);sp.scale.set(scale,scale*0.25,1);sp.renderOrder=999;
-  group.add(sp);return sp;
+const cv=document.createElement('canvas');cv.width=1024;cv.height=256;
+const ctx=cv.getContext('2d');
+// pill background with a thin light border for contrast against any scene color
+ctx.fillStyle=bg;roundRect(ctx,10,64,1004,128,40);ctx.fill();
+ctx.lineWidth=4;ctx.strokeStyle='rgba(255,255,255,.55)';ctx.stroke();
+ctx.fillStyle=fg;ctx.font='bold 88px -apple-system,Segoe UI,Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;
+ctx.fillText(text,512,132);
+const tex=new THREE.CanvasTexture(cv);tex.anisotropy=8;
+const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
+sp.position.set(x,y,z);sp.scale.set(scale,scale*0.25,1);sp.renderOrder=999;
+group.add(sp);return sp;
 }
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 
 // ---------- palette ----------
 const COL = {
-  floorWood:0xd9b98a, floorTile:0xe9e6df, kitchen:0xf2efe8, great:0xe6c9a0,
-  bedA:0x8fbce0, bedB:0x9ccf9a, bath:0xc3ccd2, family:0xe0b878, laundry:0xb9c4c8,
-  wall:0xf3ece0, shell:0xc9a874, deck:0xb98a54, roof:0x6f5236, water:0x3f93ad,
-  grass:0x7c9a5e, gravel:0xc9bfa6, trunk:0x6e4a2c, leafA:0x5c8a44, leafB:0xc08a3a
+floorWood:0xd9b98a, floorTile:0xe9e6df, kitchen:0xf2efe8, great:0xe6c9a0,
+bedA:0x8fbce0, bedB:0x9ccf9a, bath:0xc3ccd2, family:0xe0b878, laundry:0xb9c4c8,
+wall:0xf3ece0, shell:0xc9a874, deck:0xb98a54, roof:0x6f5236, water:0x3f93ad,
+grass:0x7c9a5e, gravel:0xc9bfa6, trunk:0x6e4a2c, leafA:0x5c8a44, leafB:0xc08a3a
 };
 
 // ---------- TERRAIN (wooded slope: high north -Z = driveway, low south +Z toward lake) ----------
 // Main floor (y=9) is at grade at the back (north); lower floor (y=0) walks out at the south face (z=13).
 // Past the south face the lawn keeps falling gently through the trees to the shoreline (~z=38) and lake bed.
 function groundY(z){
-  if(z<=13) return 9 - (z+13)/26*9;            // 9 at back (z=-13) -> 0 at south wall (z=13)
-  return Math.max(-8, -(z-13)*0.12);            // gentle descent to the water from the walk-out
+if(z<=13) return 9 - (z+13)/26*9; // 9 at back (z=-13) -> 0 at south wall (z=13)
+return Math.max(-8, -(z-13)*0.12); // gentle descent to the water from the walk-out
 }
 (function terrain(){
-  const geo=new THREE.PlaneGeometry(240,260,72,72);
-  geo.rotateX(-Math.PI/2);
-  const pos=geo.attributes.position;
-  for(let i=0;i<pos.count;i++){
-    const x=pos.getX(i), z=pos.getZ(i);
-    let y=groundY(z);
-    y += Math.sin(x*0.07)*0.5 + Math.cos(z*0.06)*0.5; // gentle rolling
-    pos.setY(i,y);
-  }
-  geo.computeVertexNormals();
-  const m=new THREE.Mesh(geo,mat(COL.grass,{roughness:1}));
-  m.receiveShadow=true; G.site.add(m);
+const geo=new THREE.PlaneGeometry(240,260,72,72);
+geo.rotateX(-Math.PI/2);
+const pos=geo.attributes.position;
+for(let i=0;i<pos.count;i++){
+const x=pos.getX(i), z=pos.getZ(i);
+let y=groundY(z);
+y += Math.sin(x*0.07)*0.5 + Math.cos(z*0.06)*0.5; // gentle rolling
+pos.setY(i,y);
+}
+geo.computeVertexNormals();
+const m=new THREE.Mesh(geo,mat(COL.grass,{roughness:1}));
+m.receiveShadow=true; G.site.add(m);
 })();
 
 // ---------- WATER (lake, south of the ~z=38 shoreline) ----------
 (function water(){
-  const g=new THREE.PlaneGeometry(240,170);g.rotateX(-Math.PI/2);
-  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:COL.water,roughness:.18,metalness:.45,transparent:true,opacity:.92}));
-  m.position.set(0,-3,118); m.receiveShadow=true; G.site.add(m);
+const g=new THREE.PlaneGeometry(240,170);g.rotateX(-Math.PI/2);
+const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:COL.water,roughness:.18,metalness:.45,transparent:true,opacity:.92}));
+m.position.set(0,-3,118); m.receiveShadow=true; G.site.add(m);
 })();
 
 // ---------- FLOOR SLABS ----------
 const FP=[-18,-13,18,13]; // footprint
 box(FP[2]-FP[0],0.6,FP[3]-FP[1],0,-0.3,0,mat(COL.floorWood),G.lowerInt); // lower slab
-box(FP[2]-FP[0],0.6,FP[3]-FP[1],0,8.7,0,mat(COL.floorWood),G.mainInt);   // main slab
+box(FP[2]-FP[0],0.6,FP[3]-FP[1],0,8.7,0,mat(COL.floorWood),G.mainInt); // main slab
 
 // ---------- MAIN FLOOR ROOMS (baseY = 9) ----------
 const MY=9;
-room([-18,0,-5,13], MY, COL.kitchen, COL.wall, G.mainInt);      // Kitchen
-room([-5,0,18,13],  MY, COL.great,   COL.wall, G.mainInt);      // Great room (living+dining)
-room([-18,-13,-6,0],MY, COL.bedA,    COL.wall, G.mainInt);      // Bedroom 1 (king)
-room([-6,-13,5,0],  MY, COL.bath,    COL.wall, G.mainInt);      // Bath + hall + stair
-room([5,-13,18,0],  MY, COL.bedB,    COL.wall, G.mainInt);      // Bedroom 2 (deck access)
+room([-18,0,-5,13], MY, COL.kitchen, COL.wall, G.mainInt); // Kitchen
+room([-5,0,18,13], MY, COL.great, COL.wall, G.mainInt); // Great room (living+dining)
+room([-18,-13,-6,0],MY, COL.bedA, COL.wall, G.mainInt); // Bedroom 1 (king)
+room([-6,-13,5,0], MY, COL.bath, COL.wall, G.mainInt); // Bath + hall + stair
+room([5,-13,18,0], MY, COL.bedB, COL.wall, G.mainInt); // Bedroom 2 (deck access)
 // fireplace block in great room (north interior wall)
 box(3,5,1.2,11,MY+2.5,0.8,mat(0xa6553a,{roughness:1}),G.mainInt);
 // kitchen island
@@ -204,31 +210,157 @@ shell([-18,-13,18,13],MY,7.5,COL.shell,G.mainShell);
 
 // ---------- LOWER FLOOR ROOMS (baseY = 0) ----------
 const LY=0;
-room([-18,0,18,13],  LY, COL.family,  COL.wall, G.lowerInt);    // Family/Sunroom (walk-out)
-room([-18,-13,-6,0], LY, COL.bedA,    COL.wall, G.lowerInt);    // Bedroom 3
-room([-6,-13,2,0],   LY, COL.bath,    COL.wall, G.lowerInt);    // Bath
-room([2,-13,8,0],    LY, COL.laundry, COL.wall, G.lowerInt);    // Laundry
-room([8,-13,18,0],   LY, COL.bedB,    COL.wall, G.lowerInt);    // Bedroom 4 (bunk)
+room([-18,0,18,13], LY, COL.family, COL.wall, G.lowerInt); // Family/Sunroom (walk-out)
+room([-18,-13,-6,0], LY, COL.bedA, COL.wall, G.lowerInt); // Bedroom 3
+room([-6,-13,2,0], LY, COL.bath, COL.wall, G.lowerInt); // Bath
+room([2,-13,8,0], LY, COL.laundry, COL.wall, G.lowerInt); // Laundry
+room([8,-13,18,0], LY, COL.bedB, COL.wall, G.lowerInt); // Bedroom 4 (bunk)
 // wet bar block
 box(4,2.2,1.6,-15,LY+1.1,2,mat(0x9c7b50,{roughness:.7}),G.lowerInt);
 shell([-18,-13,18,13],LY,7.5,COL.shell,G.lowerShell);
 
+// ---------- INTERIOR FURNISHINGS (tasteful low-poly; instanced where repeated) ----------
+(function furnish(){
+const MF=MY+0.7, LF=LY+0.7; // walkable floor-top heights
+// shared materials (reused across pieces -> cheap)
+const sofaMat=mat(0x6b7682,{roughness:.95});
+const cushMat=mat(0x7d8893,{roughness:.95});
+const woodD=mat(0x4f3826,{roughness:.6});
+const woodM=mat(0x8a6a45,{roughness:.7});
+const woodL=mat(0xb89a6e,{roughness:.7});
+const metal=mat(0x33383d,{roughness:.45,metalness:.35});
+const linen=mat(0xf2efe7,{roughness:.7});
+const stone=mat(0x3b4147,{roughness:.4,metalness:.1});
+const rugG=mat(0xb86b4b,{roughness:1});
+const rugB=mat(0x6f86a0,{roughness:1});
+const fixture=mat(0xf6f5f2,{roughness:.45});
+const screen=mat(0x14181b,{roughness:.3});
+
+function bx(w,h,d,x,y,z,m,g){return box(w,h,d,x,y,z,m,g,true);}
+function rug(w,d,x,y,z,m,g){const r=box(w,0.06,d,x,y+0.03,z,m,g,false);r.receiveShadow=true;r.castShadow=false;return r;}
+// instancer: repeated parts (seats, backs, posts, rungs, pillows) -> one draw call each
+function inst(geo,material,items,group){
+const im=new THREE.InstancedMesh(geo,material,items.length);
+im.castShadow=true;im.receiveShadow=true;
+const mtx=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(1,1,1),p=new THREE.Vector3(),e=new THREE.Euler();
+items.forEach((it,i)=>{e.set(0,it[3]||0,0);q.setFromEuler(e);p.set(it[0],it[1],it[2]);mtx.compose(p,q,s);im.setMatrixAt(i,mtx);});
+im.instanceMatrix.needsUpdate=true;group.add(im);return im;
+}
+
+/* ============ MAIN FLOOR ============ */
+// --- Great room: rug, sofa, coffee table, fireplace hearth + mantel ---
+rug(9,7,10,MF,7,rugG,G.mainInt);
+bx(8,1.3,3,10,MF+0.65,10,sofaMat,G.mainInt);      // sofa base (faces fireplace, north)
+bx(8,0.5,2.6,10,MF+1.45,10,cushMat,G.mainInt);    // seat cushions
+bx(8,1.5,0.6,10,MF+1.35,11.4,sofaMat,G.mainInt);  // backrest
+bx(0.6,1.3,3,6.1,MF+1.1,10,sofaMat,G.mainInt);    // arm L
+bx(0.6,1.3,3,13.9,MF+1.1,10,sofaMat,G.mainInt);   // arm R
+bx(3.6,0.25,1.8,10,MF+1.0,6.6,woodM,G.mainInt);   // coffee table top
+inst(new THREE.BoxGeometry(0.18,1.0,0.18),woodD,[
+[8.5,MF+0.5,5.9],[11.5,MF+0.5,5.9],[8.5,MF+0.5,7.3],[11.5,MF+0.5,7.3]],G.mainInt); // legs
+bx(5,0.5,2.2,11,MF+0.15,1.5,stone,G.mainInt);     // raised brick hearth
+bx(4.4,0.5,1.2,11,MF+4.6,1.0,woodD,G.mainInt);    // mantel
+bx(2.4,2.0,0.3,11,MF+1.4,1.55,mat(0x2a2320,{roughness:.9}),G.mainInt); // firebox opening
+
+// --- Dining (west side of great room): table + 6 chairs (instanced) ---
+bx(5,0.28,3,1.5,MF+2.2,5.5,woodM,G.mainInt);      // tabletop
+inst(new THREE.BoxGeometry(0.22,2.2,0.22),woodD,[
+[-0.7,MF+1.1,4.2],[3.7,MF+1.1,4.2],[-0.7,MF+1.1,6.8],[3.7,MF+1.1,6.8]],G.mainInt); // legs
+const chairSeat=new THREE.BoxGeometry(1.4,0.18,1.4);
+const chairBack=new THREE.BoxGeometry(1.4,1.5,0.18); chairBack.translate(0,0.85,-0.6);
+const diningChairs=[
+[-0.5,MF+1.4,3.4,0],[1.5,MF+1.4,3.4,0],[3.5,MF+1.4,3.4,0],
+[-0.5,MF+1.4,7.6,Math.PI],[1.5,MF+1.4,7.6,Math.PI],[3.5,MF+1.4,7.6,Math.PI]];
+inst(chairSeat,woodL,diningChairs,G.mainInt);
+inst(chairBack,woodL,diningChairs,G.mainInt);
+
+// --- Kitchen: countertop on island + perimeter counters + 3 bar stools ---
+bx(5.2,0.25,2.4,-12,MY+2.3,7,stone,G.mainInt);        // island countertop
+bx(2,2.2,12.4,-16.8,MY+1.1,6.6,woodL,G.mainInt);      // west run cabinets
+bx(2,0.2,12.4,-16.8,MY+2.3,6.6,stone,G.mainInt);      // west countertop
+bx(10,2.2,2,-12,MY+1.1,1.1,woodL,G.mainInt);          // north run cabinets
+bx(10,0.2,2,-12,MY+2.3,1.1,stone,G.mainInt);          // north countertop
+bx(1.4,0.12,1.0,-16.8,MY+2.45,5,metal,G.mainInt);     // sink
+bx(2.0,0.06,1.6,-12,MY+2.46,1.1,screen,G.mainInt);    // cooktop
+const stoolSeat=new THREE.CylinderGeometry(0.7,0.7,0.25,14);
+const stoolPost=new THREE.CylinderGeometry(0.12,0.12,1.7,8); stoolPost.translate(0,-0.85,0);
+const stools=[[-14,MF+1.6,9.2,0],[-12,MF+1.6,9.2,0],[-10,MF+1.6,9.2,0]];
+inst(stoolSeat,woodM,stools,G.mainInt);
+inst(stoolPost,metal,stools,G.mainInt);
+
+// --- Bedroom 1 (king) ---
+bx(6.6,1.0,7,-12,MF+0.5,-8.5,woodM,G.mainInt);     // platform
+bx(6.2,0.6,6.4,-12,MF+1.25,-8.3,linen,G.mainInt);  // mattress
+bx(6.6,2.4,0.4,-12,MF+1.4,-12,woodD,G.mainInt);    // headboard
+inst(new THREE.BoxGeometry(2.0,0.5,1.1),fixture,[[-13.4,MF+1.7,-11,0],[-10.6,MF+1.7,-11,0]],G.mainInt); // pillows
+inst(new THREE.BoxGeometry(1.4,1.5,1.4),woodD,[[-15.6,MF+0.75,-11.5,0],[-8.4,MF+0.75,-11.5,0]],G.mainInt); // nightstands
+
+// --- Bedroom 2 (queen) ---
+bx(5.2,1.0,6.8,11.5,MF+0.5,-8.5,woodM,G.mainInt);
+bx(4.8,0.6,6.2,11.5,MF+1.25,-8.3,linen,G.mainInt);
+bx(5.2,2.2,0.4,11.5,MF+1.35,-11.8,woodD,G.mainInt);
+inst(new THREE.BoxGeometry(1.9,0.5,1.1),fixture,[[10.2,MF+1.7,-10.8,0],[12.8,MF+1.7,-10.8,0]],G.mainInt);
+bx(1.3,1.4,1.3,8.4,MF+0.7,-11.3,woodD,G.mainInt);  // nightstand
+
+// --- Main bath (west end, clear of spiral stair) ---
+bx(1.8,1.6,1.0,-4.7,MF+0.5,-12,fixture,G.mainInt);  // vanity
+bx(1.8,0.15,1.0,-4.7,MF+1.35,-12,stone,G.mainInt);  // vanity top
+bx(1.4,1.2,1.6,-4.7,MF+0.4,-9.6,fixture,G.mainInt); // toilet
+
+/* ============ LOWER FLOOR ============ */
+// --- Family / Sunroom: rug, sofa, media console + TV, coffee table ---
+rug(10,7,2,LF,7,rugB,G.lowerInt);
+bx(9,1.3,3,2,LF+0.65,10.5,sofaMat,G.lowerInt);
+bx(9,0.5,2.6,2,LF+1.45,10.5,cushMat,G.lowerInt);
+bx(9,1.5,0.6,2,LF+1.35,11.9,sofaMat,G.lowerInt);
+bx(6,1.5,1.2,2,LF+0.75,1.2,woodD,G.lowerInt);      // media console
+bx(4.5,2.6,0.18,2,LF+2.6,0.95,screen,G.lowerInt);  // wall TV
+bx(3.6,0.25,1.8,2,LF+1.0,7,woodM,G.lowerInt);      // coffee table
+
+// --- Bedroom 3 (queen) ---
+bx(5.2,1.0,6.8,-12,LF+0.5,-8.5,woodM,G.lowerInt);
+bx(4.8,0.6,6.2,-12,LF+1.25,-8.3,linen,G.lowerInt);
+bx(5.2,2.2,0.4,-12,LF+1.35,-11.8,woodD,G.lowerInt);
+inst(new THREE.BoxGeometry(1.9,0.5,1.1),fixture,[[-13.3,LF+1.7,-10.8,0],[-10.7,LF+1.7,-10.8,0]],G.lowerInt);
+bx(1.3,1.4,1.3,-15,LF+0.7,-11.3,woodD,G.lowerInt);
+
+// --- Bedroom 4 (BUNK) ---
+inst(new THREE.BoxGeometry(0.3,5.4,0.3),woodD,[
+[10.2,LF+2.7,-12.4,0],[15.8,LF+2.7,-12.4,0],[10.2,LF+2.7,-7.6,0],[15.8,LF+2.7,-7.6,0]],G.lowerInt); // corner posts
+bx(5.6,0.5,5,13,LF+1.1,-10,woodM,G.lowerInt);     // lower bunk frame
+bx(5.2,0.5,4.6,13,LF+1.5,-10,linen,G.lowerInt);   // lower mattress
+bx(5.6,0.5,5,13,LF+3.6,-10,woodM,G.lowerInt);     // upper bunk frame
+bx(5.2,0.5,4.6,13,LF+4.0,-10,linen,G.lowerInt);   // upper mattress
+bx(5.6,0.4,0.2,13,LF+4.3,-12.3,woodD,G.lowerInt); // upper guard rail
+inst(new THREE.BoxGeometry(1.6,0.18,0.4),woodM,[
+[16.2,LF+1.4,-8,0],[16.2,LF+2.1,-8,0],[16.2,LF+2.8,-8,0],[16.2,LF+3.5,-8,0]],G.lowerInt); // ladder rungs
+
+// --- Lower bath ---
+bx(1.8,1.6,1.0,-5,LF+0.5,-12,fixture,G.lowerInt);
+bx(1.8,0.15,1.0,-5,LF+1.35,-12,stone,G.lowerInt);
+bx(1.4,1.2,1.6,-5,LF+0.4,-9.6,fixture,G.lowerInt);
+
+// --- Laundry: washer + dryer (instanced) ---
+inst(new THREE.BoxGeometry(1.8,2.2,1.8),fixture,[[3.6,LF+1.1,-11.4,0],[5.8,LF+1.1,-11.4,0]],G.lowerInt);
+inst(new THREE.CylinderGeometry(0.6,0.6,0.1,16),screen,[[3.6,LF+1.3,-10.45,Math.PI/2],[5.8,LF+1.3,-10.45,Math.PI/2]],G.lowerInt); // doors
+})();
+
 // ---------- WRAPAROUND DECK (main level top y=9; south + east return) ----------
 (function deck(){
-  const dy=9, t=0.5, plank=mat(COL.deck,{roughness:.8});
-  box(40,t,9,0,dy,17.5,plank,G.deck);             // south strip (lake side), z 13..22
-  box(11,t,36,23.5,dy,-0.5,plank,G.deck);         // east return, z -18.5..17.5
-  // railing posts + top rail (south edge z=22, east edge x=29) — leave a gap where the stairs meet the deck
-  const rail=mat(0x8a6840,{roughness:.8});
-  for(let x=-19;x<=19;x+=3) box(0.28,3,0.28,x,dy+1.5,22,rail,G.deck,false);
-  box(40,0.28,0.28,0,dy+3,22,rail,G.deck,false);
-  for(let z=-18;z<=21;z+=3){ if(z>-2.5 && z<6) continue; box(0.28,3,0.28,29,dy+1.5,z,rail,G.deck,false); }
-  box(0.28,0.28,39,29,dy+3,1.5,rail,G.deck,false);
-  // grill, outdoor dining + lounge chairs
-  box(2.4,2.4,1.5,-9,dy+1.2,19.5,mat(0x33393c,{roughness:.55,metalness:.2}),G.deck);  // gas grill
-  box(6,0.35,3,4,dy+1.4,18,mat(0x7a5a36,{roughness:.8}),G.deck);                       // dining table
-  [[0,16.5],[3.5,16.5],[0,19.5],[3.5,19.5]].forEach(([cx,cz])=>box(1.3,1.3,1.3,cx,dy+0.75,cz,mat(0x596a55,{roughness:.85}),G.deck)); // chairs
-  box(3.4,1,5,14,dy+0.6,14,mat(0x6b7d6a,{roughness:.85}),G.deck);                      // lounge sofa
+const dy=9, t=0.5, plank=mat(COL.deck,{roughness:.8});
+box(40,t,9,0,dy,17.5,plank,G.deck); // south strip (lake side), z 13..22
+box(11,t,36,23.5,dy,-0.5,plank,G.deck); // east return, z -18.5..17.5
+// railing posts + top rail (south edge z=22, east edge x=29) — leave a gap where the stairs meet the deck
+const rail=mat(0x8a6840,{roughness:.8});
+for(let x=-19;x<=19;x+=3) box(0.28,3,0.28,x,dy+1.5,22,rail,G.deck,false);
+box(40,0.28,0.28,0,dy+3,22,rail,G.deck,false);
+for(let z=-18;z<=21;z+=3){ if(z>-2.5 && z<6) continue; box(0.28,3,0.28,29,dy+1.5,z,rail,G.deck,false); }
+box(0.28,0.28,39,29,dy+3,1.5,rail,G.deck,false);
+// grill, outdoor dining + lounge chairs
+box(2.4,2.4,1.5,-9,dy+1.2,19.5,mat(0x33393c,{roughness:.55,metalness:.2}),G.deck); // gas grill
+box(6,0.35,3,4,dy+1.4,18,mat(0x7a5a36,{roughness:.8}),G.deck); // dining table
+[[0,16.5],[3.5,16.5],[0,19.5],[3.5,19.5]].forEach(([cx,cz])=>box(1.3,1.3,1.3,cx,dy+0.75,cz,mat(0x596a55,{roughness:.85}),G.deck)); // chairs
+box(3.4,1,5,14,dy+0.6,14,mat(0x6b7d6a,{roughness:.85}),G.deck); // lounge sofa
 })();
 
 // ---------- EXTERIOR ENTRY STAIRS (east lawn -> main-level deck) "18 steps" ----------
@@ -236,94 +368,94 @@ shell([-18,-13,18,13],LY,7.5,COL.shell,G.lowerShell);
 // house, descending from the deck's east edge down to a grade landing on the lawn — well
 // clear of the lake (the shoreline/water is far to the south at z>=38).
 (function entryStairs(){
-  const tread=mat(0x9a7a52,{roughness:.85});
-  const steps=14, topY=9, z=2, run=0.95, xTop=29.5;
-  const grade=groundY(z), rise=(topY-grade)/steps;
-  for(let i=0;i<steps;i++){
-    box(run+0.06, 0.4, 7, xTop+(i+0.5)*run, topY-(i+1)*rise, z, tread, G.site); // thin in X (run), 7ft wide across Z
-  }
-  const xBot=xTop+steps*run;
-  // grade landing pad on the lawn
-  box(8,0.4,8, xBot+3, grade+0.2, z, mat(COL.gravel,{roughness:1}), G.site);
-  // handrail posts following the flight (both sides), with the deck-side gap
-  const rail=mat(0x8a6840,{roughness:.8});
-  for(let i=0;i<=steps;i+=2){
-    const y=topY-i*rise, x=xTop+i*run;
-    box(0.22,2.6,0.22,x,y+1.3,z-3.4,rail,G.site,false);
-    box(0.22,2.6,0.22,x,y+1.3,z+3.4,rail,G.site,false);
-  }
+const tread=mat(0x9a7a52,{roughness:.85});
+const steps=14, topY=9, z=2, run=0.95, xTop=29.5;
+const grade=groundY(z), rise=(topY-grade)/steps;
+for(let i=0;i<steps;i++){
+box(run+0.06, 0.4, 7, xTop+(i+0.5)*run, topY-(i+1)*rise, z, tread, G.site); // thin in X (run), 7ft wide across Z
+}
+const xBot=xTop+steps*run;
+// grade landing pad on the lawn
+box(8,0.4,8, xBot+3, grade+0.2, z, mat(COL.gravel,{roughness:1}), G.site);
+// handrail posts following the flight (both sides), with the deck-side gap
+const rail=mat(0x8a6840,{roughness:.8});
+for(let i=0;i<=steps;i+=2){
+const y=topY-i*rise, x=xTop+i*run;
+box(0.22,2.6,0.22,x,y+1.3,z-3.4,rail,G.site,false);
+box(0.22,2.6,0.22,x,y+1.3,z+3.4,rail,G.site,false);
+}
 })();
 
 // ---------- INTERIOR SPIRAL STAIRCASE (center, lower->main) ----------
 (function spiral(){
-  const cx=-1, cz=-6, r=2.6, steps=16, pole=mat(0x8a6a48,{roughness:.7});
-  box(0.5,9,0.5,cx,4.5,cz,pole,G.lowerInt,false);
-  for(let i=0;i<steps;i++){
-    const a=i/steps*Math.PI*2.2, y=0.6+i*(8/steps);
-    const tx=cx+Math.cos(a)*r, tz=cz+Math.sin(a)*r;
-    const tread=box(2.6,0.3,1.4,tx,y,tz,mat(0xb98a54,{roughness:.8}),G.lowerInt,false);
-    tread.rotation.y=-a;
-  }
+const cx=-1, cz=-6, r=2.6, steps=16, pole=mat(0x8a6a48,{roughness:.7});
+box(0.5,9,0.5,cx,4.5,cz,pole,G.lowerInt,false);
+for(let i=0;i<steps;i++){
+const a=i/steps*Math.PI*2.2, y=0.6+i*(8/steps);
+const tx=cx+Math.cos(a)*r, tz=cz+Math.sin(a)*r;
+const tread=box(2.6,0.3,1.4,tx,y,tz,mat(0xb98a54,{roughness:.8}),G.lowerInt,false);
+tread.rotation.y=-a;
+}
 })();
 
 // ---------- ROOF (exterior mode) ----------
 (function roof(){
-  const eaveY=18, ridgeY=23.5;
-  const a=new THREE.Mesh(new THREE.BoxGeometry(40,0.6,16),mat(COL.roof,{roughness:.9}));
-  a.position.set(0,(eaveY+ridgeY)/2,-7);a.rotation.x=-0.6;a.castShadow=true;G.roof.add(a);
-  const b=new THREE.Mesh(new THREE.BoxGeometry(40,0.6,16),mat(COL.roof,{roughness:.9}));
-  b.position.set(0,(eaveY+ridgeY)/2,7);b.rotation.x=0.6;b.castShadow=true;G.roof.add(b);
-  // gable ends fill
-  [-20,20].forEach(x=>{const g=new THREE.Mesh(new THREE.BoxGeometry(0.6,5.5,16),mat(COL.shell));g.position.set(x,20.7,0);G.roof.add(g);});
+const eaveY=18, ridgeY=23.5;
+const a=new THREE.Mesh(new THREE.BoxGeometry(40,0.6,16),mat(COL.roof,{roughness:.9}));
+a.position.set(0,(eaveY+ridgeY)/2,-7);a.rotation.x=-0.6;a.castShadow=true;G.roof.add(a);
+const b=new THREE.Mesh(new THREE.BoxGeometry(40,0.6,16),mat(COL.roof,{roughness:.9}));
+b.position.set(0,(eaveY+ridgeY)/2,7);b.rotation.x=0.6;b.castShadow=true;G.roof.add(b);
+// gable ends fill
+[-20,20].forEach(x=>{const g=new THREE.Mesh(new THREE.BoxGeometry(0.6,5.5,16),mat(COL.shell));g.position.set(x,20.7,0);G.roof.add(g);});
 })();
 
 // ---------- GRAVEL PATH (deck SE corner -> down the slope to the shoreline) ----------
 (function path(){
-  const gm=mat(COL.gravel,{roughness:1});
-  const pts=[[13,24],[11,28],[8,32],[5,36],[3,39]];
-  pts.forEach(([x,z])=>{ box(4.5,0.3,5, x, groundY(z)+0.15, z, gm, G.site); });
+const gm=mat(COL.gravel,{roughness:1});
+const pts=[[13,24],[11,28],[8,32],[5,36],[3,39]];
+pts.forEach(([x,z])=>{ box(4.5,0.3,5, x, groundY(z)+0.15, z, gm, G.site); });
 })();
 
 // ---------- PRIVATE COVERED DOCK (pontoon + blue floating mat), out over the water ----------
 (function dock(){
-  const dx=2, dz=56, deckY=-1.8;
-  // gangway from the shore out to the platform
-  box(4,0.4,14,dx, -1.4, dz-12, mat(0xa9824f,{roughness:.85}), G.site);
-  // platform
-  box(16,0.4,13,dx,deckY,dz,mat(0xb98a54,{roughness:.85}),G.site);
-  // posts + canopy roof
-  const pm=mat(0x6f7a80,{roughness:.55,metalness:.2});
-  [[-7,-6],[7,-6],[-7,6],[7,6]].forEach(([ox,oz])=>box(0.4,5,0.4,dx+ox,deckY+2.5,dz+oz,pm,G.site));
-  box(17,0.45,14,dx,deckY+5,dz,new THREE.MeshStandardMaterial({color:0x9aa4a9,roughness:.45,metalness:.4}),G.site); // canopy
-  // pontoon boat in slip (east side)
-  box(7,1,3,dx+10,deckY-0.3,dz,mat(0xe2e2e2,{roughness:.45}),G.site);
-  box(7,0.5,3,dx+10,deckY+0.6,dz,mat(0x445a6a,{roughness:.55}),G.site);
-  // blue floating water mat (west side, on the water)
-  box(10,0.22,4,dx-13,-2.78,dz+2,new THREE.MeshStandardMaterial({color:0x2b6fb0,roughness:.35}),G.site);
-  // dock box / storage
-  box(2,1.2,2,dx-5,deckY+0.6,dz-5,mat(0x8a5a3a,{roughness:.8}),G.site);
+const dx=2, dz=56, deckY=-1.8;
+// gangway from the shore out to the platform
+box(4,0.4,14,dx, -1.4, dz-12, mat(0xa9824f,{roughness:.85}), G.site);
+// platform
+box(16,0.4,13,dx,deckY,dz,mat(0xb98a54,{roughness:.85}),G.site);
+// posts + canopy roof
+const pm=mat(0x6f7a80,{roughness:.55,metalness:.2});
+[[-7,-6],[7,-6],[-7,6],[7,6]].forEach(([ox,oz])=>box(0.4,5,0.4,dx+ox,deckY+2.5,dz+oz,pm,G.site));
+box(17,0.45,14,dx,deckY+5,dz,new THREE.MeshStandardMaterial({color:0x9aa4a9,roughness:.45,metalness:.4}),G.site); // canopy
+// pontoon boat in slip (east side)
+box(7,1,3,dx+10,deckY-0.3,dz,mat(0xe2e2e2,{roughness:.45}),G.site);
+box(7,0.5,3,dx+10,deckY+0.6,dz,mat(0x445a6a,{roughness:.55}),G.site);
+// blue floating water mat (west side, on the water)
+box(10,0.22,4,dx-13,-2.78,dz+2,new THREE.MeshStandardMaterial({color:0x2b6fb0,roughness:.35}),G.site);
+// dock box / storage
+box(2,1.2,2,dx-5,deckY+0.6,dz-5,mat(0x8a5a3a,{roughness:.8}),G.site);
 })();
 
 // ---------- TREES (wooded slope) ----------
 (function trees(){
-  const positions=[];
-  for(let i=0;i<80;i++){
-    const x=(Math.random()-0.5)*200, z=(Math.random()-0.5)*150 - 12;
-    // keep off the house + deck + east stairs footprint
-    if(x>-22 && x<48 && z>-22 && z<24) continue;
-    // keep off the path/dock corridor down to the lake
-    if(x>-6 && x<16 && z>=24) continue;
-    if(z>37) continue; // stop at the shoreline, not in the lake
-    positions.push([x,z]);
-  }
-  positions.forEach(([x,z])=>{
-    const gy=groundY(z); if(gy<-2.4) return;
-    const h=6+Math.random()*8;
-    box(0.8,h*0.4,0.8,x,gy+h*0.2,z,mat(COL.trunk,{roughness:1}),G.site,false);
-    const leaf=Math.random()>0.4?COL.leafA:COL.leafB;
-    const c=new THREE.Mesh(new THREE.ConeGeometry(2.6+Math.random()*1.5,h,7),mat(leaf,{roughness:1}));
-    c.position.set(x,gy+h*0.4+h*0.4,z);c.castShadow=true;G.site.add(c);
-  });
+const positions=[];
+for(let i=0;i<80;i++){
+const x=(Math.random()-0.5)*200, z=(Math.random()-0.5)*150 - 12;
+// keep off the house + deck + east stairs footprint
+if(x>-22 && x<48 && z>-22 && z<24) continue;
+// keep off the path/dock corridor down to the lake
+if(x>-6 && x<16 && z>=24) continue;
+if(z>37) continue; // stop at the shoreline, not in the lake
+positions.push([x,z]);
+}
+positions.forEach(([x,z])=>{
+const gy=groundY(z); if(gy<-2.4) return;
+const h=6+Math.random()*8;
+box(0.8,h*0.4,0.8,x,gy+h*0.2,z,mat(COL.trunk,{roughness:1}),G.site,false);
+const leaf=Math.random()>0.4?COL.leafA:COL.leafB;
+const c=new THREE.Mesh(new THREE.ConeGeometry(2.6+Math.random()*1.5,h,7),mat(leaf,{roughness:1}));
+c.position.set(x,gy+h*0.4+h*0.4,z);c.castShadow=true;G.site.add(c);
+});
 })();
 
 // ---------- LABELS ----------
@@ -348,31 +480,82 @@ label('Driveway / Entry',0,13,-26,G.siteLbl,13,'rgba(60,70,80,.88)');
 
 // ---------- MODE TOGGLE ----------
 function setMode(mode){
-  const showMain = mode!=='lower';
-  const showLower = mode!=='main';
-  const interior = mode!=='exterior';
-  G.mainShell.visible = showMain;
-  G.mainInt.visible = showMain && interior;
-  G.mainLbl.visible = showMain && interior;
-  G.lowerShell.visible = showLower;
-  G.lowerInt.visible = showLower && interior;
-  G.lowerLbl.visible = showLower && interior;
-  G.deck.visible = mode!=='lower';
-  G.roof.visible = mode==='exterior';
-  G.siteLbl.visible = interior;
-  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+const showMain = mode!=='lower';
+const showLower = mode!=='main';
+const interior = mode!=='exterior';
+G.mainShell.visible = showMain;
+G.mainInt.visible = showMain && interior;
+G.mainLbl.visible = showMain && interior;
+G.lowerShell.visible = showLower;
+G.lowerInt.visible = showLower && interior;
+G.lowerLbl.visible = showLower && interior;
+G.deck.visible = mode!=='lower';
+G.roof.visible = mode==='exterior';
+G.siteLbl.visible = interior;
+document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
 }
-document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>{ if(touring) stopTour(); setMode(b.dataset.mode); });
 function flyTo(pos,tgt){camera.position.copy(pos);controls.target.copy(tgt);controls.update();}
-document.getElementById('reset').onclick=()=>flyTo(HOME_POS,HOME_TGT);
-document.getElementById('viewHouse').onclick=()=>flyTo(HOME_POS,HOME_TGT);
-document.getElementById('viewSite').onclick=()=>flyTo(SITE_POS,SITE_TGT);
+document.getElementById('reset').onclick=()=>{ if(touring) stopTour(); flyTo(HOME_POS,HOME_TGT); };
+document.getElementById('viewHouse').onclick=()=>{ if(touring) stopTour(); flyTo(HOME_POS,HOME_TGT); };
+document.getElementById('viewSite').onclick=()=>{ if(touring) stopTour(); flyTo(SITE_POS,SITE_TGT); };
 setMode('both');
+
+// ---------- GUIDED TOUR (first-person, eased walkthrough) ----------
+// Real path: entry (top of east stairs) -> great room -> kitchen -> out to deck -> down to dock -> look out at the lake.
+const TOUR_PATH=[
+{p:[28,13,3],   t:[11,12,6]},    // entry: top of the east stairs, looking into the house
+{p:[13,13.5,8], t:[11,12,1]},    // great room, toward the fireplace
+{p:[1.5,13.5,7],t:[-15,12,6]},   // kitchen
+{p:[6,13.5,15], t:[6,11,32]},    // step out onto the lakeside deck
+{p:[3,4,42],    t:[2,0,56]},     // down the slope toward the dock
+{p:[2,2.5,54],  t:[2,0,120]}     // on the dock, looking out at Lake Hartwell
+];
+const SEG_DUR=3.4; // seconds per leg
+let touring=false, tourClock=null, tourPath=null;
+const _va=new THREE.Vector3(), _vb=new THREE.Vector3(), _vl=new THREE.Vector3();
+function easeInOut(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+function startTour(){
+setMode('both'); // make sure interiors are visible for the walkthrough
+tourPath=[{p:[camera.position.x,camera.position.y,camera.position.z],t:[controls.target.x,controls.target.y,controls.target.z]}].concat(TOUR_PATH);
+touring=true; controls.enabled=false; tourClock=new THREE.Clock();
+const b=document.getElementById('tour'); b.textContent='✕ Exit tour'; b.classList.add('active');
+document.getElementById('hint').textContent='Guided tour — sit back · press Exit tour to return to orbit';
+}
+function stopTour(){
+if(!touring) return;
+touring=false; controls.enabled=true;
+const b=document.getElementById('tour'); b.textContent='▶ Guided tour'; b.classList.remove('active');
+document.getElementById('hint').textContent='Drag to orbit · scroll to zoom · right-drag to pan';
+flyTo(HOME_POS,HOME_TGT);
+}
+document.getElementById('tour').onclick=()=>{ touring?stopTour():startTour(); };
+function updateTour(){
+const elapsed=tourClock.getElapsedTime();
+const segs=tourPath.length-1;
+let seg=Math.floor(elapsed/SEG_DUR);
+if(seg>=segs){ // hold the final lake view briefly, then return to orbit
+const last=tourPath[tourPath.length-1];
+camera.position.set(last.p[0],last.p[1],last.p[2]);
+camera.lookAt(last.t[0],last.t[1],last.t[2]);
+if(elapsed>segs*SEG_DUR+2.4) stopTour();
+return;
+}
+const lt=easeInOut((elapsed-seg*SEG_DUR)/SEG_DUR);
+const a=tourPath[seg], b=tourPath[seg+1];
+_va.set(a.p[0],a.p[1],a.p[2]); _vb.set(b.p[0],b.p[1],b.p[2]);
+camera.position.copy(_va.lerp(_vb,lt));
+_va.set(a.t[0],a.t[1],a.t[2]); _vb.set(b.t[0],b.t[1],b.t[2]);
+_vl.copy(_va.lerp(_vb,lt));
+camera.lookAt(_vl);
+}
 
 // ---------- render ----------
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 document.getElementById('loading').style.display='none';
-(function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);})();
+(function animate(){requestAnimationFrame(animate);
+if(touring){updateTour();}else{controls.update();}
+renderer.render(scene,camera);})();
 </script>
 </body>
 </html>
