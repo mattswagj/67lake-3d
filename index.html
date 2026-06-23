@@ -478,6 +478,15 @@ label('Pontoon + blue floating mat',-7,1,62,G.siteLbl,12,'rgba(40,90,140,.92)');
 label('Lake Hartwell',2,1.5,120,G.siteLbl,18,'rgba(30,110,140,.88)');
 label('Driveway / Entry',0,13,-26,G.siteLbl,13,'rgba(60,70,80,.88)');
 
+// ---------- LABEL FADE (hide room labels during the guided tour) ----------
+const LBL_GROUPS=[G.mainLbl,G.lowerLbl,G.siteLbl];
+let lblOpacity=1, lblTarget=1;
+function updateLabelFade(){
+  if(Math.abs(lblOpacity-lblTarget)<0.003) lblOpacity=lblTarget;
+  else lblOpacity += (lblTarget-lblOpacity)*0.16; // smooth ~400ms ease in/out
+  for(const g of LBL_GROUPS) for(const s of g.children) if(s.material) s.material.opacity=lblOpacity;
+}
+
 // ---------- MODE TOGGLE ----------
 function setMode(mode){
 const showMain = mode!=='lower';
@@ -518,13 +527,13 @@ function easeInOut(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
 function startTour(){
 setMode('both'); // make sure interiors are visible for the walkthrough
 tourPath=[{p:[camera.position.x,camera.position.y,camera.position.z],t:[controls.target.x,controls.target.y,controls.target.z]}].concat(TOUR_PATH);
-touring=true; controls.enabled=false; tourClock=new THREE.Clock();
+lblTarget=0; touring=true; controls.enabled=false; tourClock=new THREE.Clock();
 const b=document.getElementById('tour'); b.textContent='✕ Exit tour'; b.classList.add('active');
 document.getElementById('hint').textContent='Guided tour — sit back · press Exit tour to return to orbit';
 }
 function stopTour(){
 if(!touring) return;
-touring=false; controls.enabled=true;
+lblTarget=1; touring=false; controls.enabled=true;
 const b=document.getElementById('tour'); b.textContent='▶ Guided tour'; b.classList.remove('active');
 document.getElementById('hint').textContent='Drag to orbit · scroll to zoom · right-drag to pan';
 flyTo(HOME_POS,HOME_TGT);
@@ -554,7 +563,7 @@ camera.lookAt(_vl);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 document.getElementById('loading').style.display='none';
 (function animate(){requestAnimationFrame(animate);
-if(touring){updateTour();}else{controls.update();}
+if(touring){updateTour();}else{controls.update();} updateLabelFade();
 renderer.render(scene,camera);})();
 </script>
 </body>
